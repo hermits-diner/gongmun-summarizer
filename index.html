@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>공문 요약 도우미 · 붙여넣으면 Gemini가 요약해 드립니다</title>
+  <meta name="description" content="복사한 공문을 붙여넣으면 Gemini로 요약해 클립보드에 복사하는 크롬 확장 프로그램. 신청 링크까지 놓치지 않고 정리해 드립니다." />
+  <meta property="og:title" content="공문 요약 도우미" />
+  <meta property="og:description" content="복사한 공문을 붙여넣으면 Gemini가 요약해 드립니다. 페이지 접근·결재·전송은 하지 않습니다." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://gongmun-summarizer.vercel.app/" />
+  <meta property="og:image" content="https://gongmun-summarizer.vercel.app/icons/icon128.png" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="공문 요약 도우미" />
+  <meta name="twitter:description" content="복사한 공문을 붙여넣으면 Gemini가 요약해 드립니다. 신청 링크까지 놓치지 않습니다." />
+  <meta name="twitter:image" content="https://gongmun-summarizer.vercel.app/icons/icon128.png" />
+  <meta name="theme-color" content="#5a6cf0" />
+  <link rel="canonical" href="https://gongmun-summarizer.vercel.app/" />
+  <link rel="icon" type="image/png" sizes="128x128" href="icons/icon128.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "공문 요약 도우미",
+    "applicationCategory": "BrowserApplication",
+    "operatingSystem": "Chrome",
+    "description": "복사한 공문을 붙여넣으면 Gemini로 요약해 클립보드에 복사하는 크롬 확장 프로그램. 핵심·조치사항·기한·신청 링크까지 정리합니다.",
+    "url": "https://gongmun-summarizer.vercel.app/",
+    "inLanguage": "ko",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "KRW" }
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0e1130;
+      --bg-2: #141a44;
+      --card: rgba(255, 255, 255, 0.055);
+      --card-brd: rgba(255, 255, 255, 0.10);
+      --ink: #eef1ff;
+      --ink-soft: #b7bfe6;
+      --ink-mute: #8a93c4;
+      --brand-1: #6e8bff;
+      --brand-2: #5a6cf0;
+      --brand-3: #6a45ff;
+      --amber: #ffbb45;
+      --radius: 18px;
+      --maxw: 1080px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+        "Malgun Gothic", "Noto Sans KR", Roboto, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(1100px 620px at 14% -8%, rgba(110, 139, 255, 0.30), transparent 60%),
+        radial-gradient(940px 620px at 96% 4%, rgba(106, 69, 255, 0.28), transparent 58%),
+        radial-gradient(800px 700px at 50% 116%, rgba(90, 108, 240, 0.20), transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+    /* ===== Nav ===== */
+    nav {
+      position: sticky; top: 0; z-index: 20;
+      backdrop-filter: blur(14px);
+      background: rgba(14, 17, 48, 0.55);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 66px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 700; letter-spacing: -0.01em; }
+    .brand .mark { width: 34px; height: 34px; border-radius: 9px; box-shadow: 0 6px 18px rgba(106, 69, 255, 0.4); }
+    .nav-links { display: flex; align-items: center; gap: 8px; }
+    .ghbtn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 15px; border-radius: 11px; font-size: 14px; font-weight: 600;
+      border: 1px solid var(--card-brd); background: var(--card);
+      transition: border-color .2s, transform .2s, background .2s;
+    }
+    .ghbtn:hover { border-color: rgba(255,255,255,0.28); transform: translateY(-1px); background: rgba(255,255,255,0.09); }
+    .ghbtn svg { width: 17px; height: 17px; fill: currentColor; }
+
+    /* ===== Hero ===== */
+    header { padding: 84px 0 64px; text-align: center; }
+    .hero-icon {
+      width: 108px; height: 108px; margin: 0 auto 28px; display: block;
+      border-radius: 26px;
+      filter: drop-shadow(0 22px 44px rgba(106, 69, 255, 0.45));
+      animation: float 5.5s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+    @media (prefers-reduced-motion: reduce) { .hero-icon { animation: none; } }
+    .pill {
+      display: inline-flex; align-items: center; gap: 7px; margin-bottom: 22px;
+      padding: 6px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink-soft);
+      border: 1px solid var(--card-brd); background: var(--card);
+    }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+    h1 {
+      font-size: clamp(34px, 6vw, 58px); line-height: 1.12; letter-spacing: -0.03em;
+      margin: 0 0 20px; font-weight: 800;
+    }
+    h1 .grad {
+      background: linear-gradient(100deg, var(--brand-1), var(--amber));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .sub { max-width: 620px; margin: 0 auto 34px; font-size: clamp(16px, 2.3vw, 20px); color: var(--ink-soft); }
+    .cta { display: flex; flex-wrap: wrap; gap: 13px; justify-content: center; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 9px;
+      padding: 14px 24px; border-radius: 13px; font-size: 15px; font-weight: 700;
+      transition: transform .2s, box-shadow .2s, border-color .2s, background .2s;
+    }
+    .btn svg { width: 18px; height: 18px; fill: currentColor; }
+    .btn-primary {
+      color: #fff; border: 1px solid transparent;
+      background: linear-gradient(120deg, var(--brand-1), var(--brand-3));
+      box-shadow: 0 14px 34px rgba(106, 69, 255, 0.45);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 42px rgba(106, 69, 255, 0.6); }
+    .btn-ghost { color: var(--ink); border: 1px solid var(--card-brd); background: var(--card); }
+    .btn-ghost:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.09); }
+
+    /* ===== Section ===== */
+    section.block { padding: 56px 0; }
+    .eyebrow { text-align: center; font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brand-1); margin: 0 0 10px; }
+    h2 { text-align: center; font-size: clamp(26px, 4vw, 38px); letter-spacing: -0.02em; margin: 0 0 44px; font-weight: 800; }
+
+    /* ===== Features ===== */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card); border: 1px solid var(--card-brd); border-radius: var(--radius);
+      padding: 26px 24px; transition: transform .25s, border-color .25s, background .25s;
+    }
+    .card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.24); background: rgba(255,255,255,0.08); }
+    .ic {
+      width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; margin-bottom: 16px;
+      background: linear-gradient(135deg, rgba(110,139,255,0.22), rgba(106,69,255,0.22));
+      border: 1px solid rgba(255,255,255,0.10);
+    }
+    .ic svg { width: 24px; height: 24px; stroke: var(--brand-1); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .ic.amber { background: linear-gradient(135deg, rgba(255,187,69,0.22), rgba(255,154,61,0.16)); }
+    .ic.amber svg { stroke: var(--amber); }
+    .card h3 { margin: 0 0 8px; font-size: 18px; letter-spacing: -0.01em; }
+    .card p { margin: 0; color: var(--ink-mute); font-size: 14.5px; }
+
+    /* ===== Install ===== */
+    .steps { max-width: 760px; margin: 0 auto; display: grid; gap: 14px; }
+    .step {
+      display: flex; gap: 18px; align-items: flex-start;
+      background: var(--card); border: 1px solid var(--card-brd); border-radius: var(--radius); padding: 20px 22px;
+    }
+    .step .num {
+      flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      font-weight: 800; font-size: 15px; color: #fff;
+      background: linear-gradient(135deg, var(--brand-1), var(--brand-3));
+      box-shadow: 0 6px 16px rgba(106,69,255,0.4);
+    }
+    .step h4 { margin: 3px 0 4px; font-size: 16px; }
+    .step p { margin: 0; color: var(--ink-mute); font-size: 14px; }
+    .step code { background: rgba(255,255,255,0.09); padding: 1px 7px; border-radius: 6px; font-size: 13px; color: var(--ink); }
+
+    /* ===== Privacy ===== */
+    .note {
+      max-width: 820px; margin: 0 auto; border-radius: var(--radius); padding: 28px 30px;
+      background: linear-gradient(135deg, rgba(110,139,255,0.10), rgba(106,69,255,0.06));
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .note h3 { margin: 0 0 14px; font-size: 19px; display: flex; align-items: center; gap: 9px; }
+    .note h3 svg { width: 22px; height: 22px; stroke: var(--amber); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .note ul { margin: 0; padding-left: 20px; color: var(--ink-soft); }
+    .note li { margin: 7px 0; font-size: 14.5px; }
+
+    /* ===== Footer ===== */
+    footer { padding: 46px 0 60px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); margin-top: 30px; }
+    footer .brand { justify-content: center; margin-bottom: 12px; }
+    footer p { margin: 4px 0; color: var(--ink-mute); font-size: 13.5px; }
+    footer a.link { color: var(--ink-soft); border-bottom: 1px solid rgba(255,255,255,0.2); }
+    footer a.link:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <img class="mark" src="icons/icon128.png" alt="" />
+        <span>공문 요약 도우미</span>
+      </a>
+      <div class="nav-links">
+        <a class="ghbtn" href="https://github.com/hermits-diner/gongmun-summarizer" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <a id="top"></a>
+  <header>
+    <div class="wrap">
+      <img class="hero-icon" src="icons/icon128.png" alt="공문 요약 도우미 아이콘" />
+      <div class="pill"><span class="dot"></span> Gemini 기반 · 크롬 확장 프로그램</div>
+      <h1>공문, 붙여넣으면<br /><span class="grad">요약이 끝납니다</span></h1>
+      <p class="sub">복사한 공문 본문을 붙여넣으면 Gemini가 핵심·조치사항·기한·신청 링크까지 정리해 클립보드에 담아 드립니다. 페이지 접근·결재·전송은 하지 않습니다.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="https://github.com/hermits-diner/gongmun-summarizer" target="_blank" rel="noopener">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          소스 & 다운로드
+        </a>
+        <a class="btn btn-ghost" href="#install">설치 방법 보기</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="block">
+    <div class="wrap">
+      <p class="eyebrow">Features</p>
+      <h2>필요한 것만, 깔끔하게</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><path d="M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/><path d="M9 12h6M9 16h4"/></svg></div>
+          <h3>붙여넣기 한 번</h3>
+          <p>아이콘을 열면 클립보드 내용이 입력창에 자동으로 첨부됩니다. 복사 → 열기 → 요약, 세 동작이면 끝.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
+          <h3>두 가지 요약 형식</h3>
+          <p>핵심·조치사항·기한·담당을 정리하는 상세 요약과, 동료에게 바로 전달할 쿨메신저 안내문 형식을 고를 수 있습니다.</p>
+        </div>
+        <div class="card">
+          <div class="ic amber"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
+          <h3>신청 링크 보존</h3>
+          <p>접속해 신청·등록해야 하는 URL과 하이퍼링크를 원문 그대로 담아, 요약 과정에서 빠뜨리지 않습니다.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <h3>최소 권한</h3>
+          <p><code style="font-size:12.5px">storage</code>·<code style="font-size:12.5px">clipboardRead</code>와 Gemini 호출 권한만 사용합니다. 페이지를 읽거나 바꾸지 않습니다.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+          <h3>본인 Gemini 키</h3>
+          <p>발급받은 API 키를 넣어 직접 호출합니다. 기본 모델은 항상 최신 플래시로 연결됩니다.</p>
+        </div>
+        <div class="card">
+          <div class="ic amber"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></div>
+          <h3>결재·전송 없음</h3>
+          <p>상신·결재·발송을 자동화하지 않습니다. 오직 붙여넣은 텍스트를 요약하는 일만 합니다.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="install">
+    <div class="wrap">
+      <p class="eyebrow">Install</p>
+      <h2>3분이면 설치 완료</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <div>
+            <h4>Gemini API 키 발급</h4>
+            <p><a class="link" style="color:var(--brand-1);border-bottom:1px solid rgba(110,139,255,.4)" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> 에서 <code>Create API key</code> → 생성된 키(<code>AIza…</code>) 복사</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <div>
+            <h4>코드 내려받기</h4>
+            <p>GitHub에서 저장소를 <code>Code → Download ZIP</code> 으로 받아 압축을 풀거나 <code>git clone</code> 합니다.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <div>
+            <h4>크롬에 로드</h4>
+            <p>주소창에 <code>chrome://extensions</code> → 우측 상단 <strong>개발자 모드</strong> ON → <strong>압축해제된 확장 프로그램을 로드</strong> → 압축 푼 폴더 선택</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="num">4</div>
+          <div>
+            <h4>키 저장 후 사용</h4>
+            <p>툴바 아이콘 클릭 → ⚙에서 API 키를 저장하면 준비 완료. 공문 본문을 복사해 붙여넣고 <strong>요약하기</strong>를 누르세요.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="wrap">
+      <div class="note">
+        <h3><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg> 사용 전 확인하세요</h3>
+        <ul>
+          <li>붙여넣은 텍스트는 요약을 위해 외부(Gemini API)로 전송됩니다. <strong>개인정보·비공개(비밀) 문서에는 사용하지 마세요.</strong></li>
+          <li>외부 API 전송이 소속 기관 보안정책에 저촉되지 않는지 정보보안 담당자에게 확인하시기 바랍니다.</li>
+          <li>이 확장은 요약만 수행하며 결재·상신·전송을 자동화하지 않습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div class="brand">
+        <img class="mark" src="icons/icon128.png" alt="" />
+        <span>공문 요약 도우미</span>
+      </div>
+      <p>공문 처리를 조금 더 가볍게. Gemini로 요약하고, 신청 링크까지 챙깁니다.</p>
+      <p><a class="link" href="https://github.com/hermits-diner/gongmun-summarizer" target="_blank" rel="noopener">GitHub 저장소</a> · 오픈소스</p>
+    </div>
+  </footer>
+</body>
+</html>

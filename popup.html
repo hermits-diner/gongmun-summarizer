@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>공문 요약</title>
+</head>
+<body>
+  <header>
+    <h1>공문 요약 도우미</h1>
+    <button id="toggleSettings" class="link" title="설정">⚙</button>
+  </header>
+
+  <!-- 설정 영역 -->
+  <section id="settings" class="panel hidden">
+    <label>
+      Gemini API 키
+      <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off" />
+    </label>
+    <label>
+      모델
+      <input type="text" id="model" placeholder="gemini-flash-latest" />
+    </label>
+    <button id="saveSettings" class="primary">저장</button>
+    <p class="hint">키는 이 브라우저(chrome.storage.local)에만 저장되며 외부로 전송되지 않습니다.</p>
+  </section>
+
+  <!-- 작업 영역 -->
+  <section id="work" class="panel">
+    <div class="row spread">
+      <label class="nomargin">붙여넣을 본문</label>
+      <button id="paste" class="ghost small">클립보드 붙여넣기</button>
+    </div>
+    <textarea id="input" placeholder="본문을 복사한 뒤 여기에 붙여넣기 (Ctrl+V) 하거나 위 버튼을 누르세요."></textarea>
+
+    <label class="mode">
+      요약 형식
+      <select id="mode">
+        <option value="detail">상세 요약 (핵심·조치·기한·담당)</option>
+        <option value="short">쿨메신저 전달용 짧은 버전</option>
+      </select>
+    </label>
+    <button id="run" class="primary">요약하기</button>
+
+    <div id="status" class="status"></div>
+
+    <label class="nomargin" style="margin-top:6px;">요약 결과</label>
+    <textarea id="output" placeholder="요약 결과가 여기 표시됩니다." readonly></textarea>
+    <div class="row">
+      <button id="copy" class="ghost" disabled>복사</button>
+      <span id="meta" class="meta"></span>
+    </div>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

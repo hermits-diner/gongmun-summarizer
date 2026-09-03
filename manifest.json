@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "공문 요약 도우미",
+  "version": "1.2.0",
+  "description": "복사한 본문을 붙여넣으면 Gemini로 요약해 클립보드에 복사합니다. 페이지 접근·결재·전송은 하지 않습니다.",
+  "permissions": ["storage", "clipboardRead"],
+  "host_permissions": ["https://generativelanguage.googleapis.com/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "공문 요약"
+  }
+}
